@@ -1,0 +1,20 @@
+[
+  {
+    "url": "http://proxy-isp-lokal-1:8080",
+    "country": "ID",
+    "weight": 10,
+    "timeout": "10s"
+  },
+  {
+    "url": "http://proxy-isp-lokal-2:3128",
+    "country": "ID",
+    "weight": 5,
+    "timeout": "10s"
+  },
+  {
+    "url": "socks5://127.0.0.1:9050",
+    "country": "tor",
+    "weight": 1,
+    "timeout": "30s"
+  }
+]
