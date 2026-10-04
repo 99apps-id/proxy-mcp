@@ -5,15 +5,21 @@ Use it when an API (for example Meta/Muse) blocks your server IP or ISP DNS.
 
 ## Install
 
+### Build from source
+
 ```bash
-go build -o proxy-mcp.exe .
+git clone https://github.com/99apps-id/proxy-mcp.git
+cd proxy-mcp
+go build -o proxy-mcp .
 ```
 
-Binary: `C:/project/proxy-mcp/proxy-mcp.exe`
+### Download binary
+
+Pre-built binaries are available for Linux, macOS, and Windows on the GitHub Releases page.
 
 ## Configure
 
-Create a JSON file listing your proxies, for example `C:/project/proxy-mcp/proxies.json`:
+Create a JSON file listing your proxies, for example `./proxies.json`:
 
 ```json
 [
@@ -43,36 +49,115 @@ Fields:
 ## Run
 
 ```bash
-# as Termigo MCP server
-proxy-mcp.exe -config C:\path\to\proxies.json
+# Linux / macOS
+./proxy-mcp -config ./proxies.json
+
+# Windows (PowerShell)
+.\proxy-mcp.exe -config .\proxies.json
 
 # or with environment variable
-set PROXY_MCP_CONFIG=C:\path\to\proxies.json
-proxy-mcp.exe
+# Linux / macOS
+export PROXY_MCP_CONFIG=./proxies.json
+./proxy-mcp
+
+# Windows (PowerShell)
+$env:PROXY_MCP_CONFIG = ".\proxies.json"
+.\proxy-mcp.exe
 ```
 
-## Register in Termigo
+## Register in Editors and Agents
 
-Edit your user MCP config and add the server:
+### Termigo
 
-`C:/Users/Nesa/.termigo/mcp.json`
+Edit your user MCP config:
+
+- **Linux/macOS**: `~/.termigo/mcp.json`
+- **Windows**: `C:\Users\Nesa\.termigo\mcp.json`
 
 ```json
 {
   "mcpServers": {
-    "doh": {
-      "command": "C:/project/doh-mcp/doh-mcp.exe",
-      "args": ["-resolver", "cloudflare"]
-    },
     "proxy": {
-      "command": "C:/project/proxy-mcp/proxy-mcp.exe",
-      "args": ["-config", "C:/project/proxy-mcp/proxies.json"]
+      "command": "/absolute/path/to/proxy-mcp",
+      "args": ["-config", "/absolute/path/to/proxies.json"]
     }
   }
 }
 ```
 
-Then restart Termigo so it loads the new MCP server.
+Use forward slashes or escaped backslashes in JSON. Restart Termigo to load the server.
+
+### VS Code (MCP Extension)
+
+Add to your VS Code MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "proxy": {
+      "command": "/absolute/path/to/proxy-mcp",
+      "args": ["-config", "/absolute/path/to/proxies.json"]
+    }
+  }
+}
+```
+
+### Claude Code
+
+```bash
+claude mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+```
+
+### Codex
+
+```bash
+codex mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+```
+
+### OpenCode
+
+```bash
+opencode mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+```
+
+### OpenClaw
+
+```bash
+openclaw mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+```
+
+### Hermes
+
+```bash
+hermes mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+```
+
+### 9router
+
+```bash
+9router mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+```
+
+### Termixgo
+
+```bash
+termixgo mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+```
+
+### Generic MCP Configuration
+
+Any MCP client that supports stdio servers:
+
+```json
+{
+  "mcpServers": {
+    "proxy": {
+      "command": "/absolute/path/to/proxy-mcp",
+      "args": ["-config", "/absolute/path/to/proxies.json"]
+    }
+  }
+}
+```
 
 ## Tools
 
@@ -95,7 +180,7 @@ Run a quick connectivity check against every proxy and report status.
 ### `proxy_list`
 Same as `proxy_health`; lists all proxies with current health status and success rate.
 
-## Usage from AI agent
+## Usage from AI Agent
 
 Once registered, you can ask the agent to use the proxy pool directly:
 
@@ -104,6 +189,13 @@ Once registered, you can ask the agent to use the proxy pool directly:
 - "List proxies"
 
 The agent will call `proxy_request`, `proxy_health`, or `proxy_list` via MCP.
+
+## Cross-Platform Notes
+
+- Binary name is `proxy-mcp` on Linux/macOS, `proxy-mcp.exe` on Windows.
+- Config paths use platform-native separators, but forward slashes work everywhere.
+- No external dependencies beyond the Go standard library.
+- SOCKS5 proxies require TCP dial support, which is available on all platforms.
 
 ## Notes
 
