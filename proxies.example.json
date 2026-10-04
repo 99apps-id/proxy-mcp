@@ -16,5 +16,17 @@
     "country": "tor",
     "weight": 1,
     "timeout": "30s"
+  },
+  {
+    "url": "socks5://127.0.0.1:9051",
+    "country": "tor",
+    "weight": 1,
+    "timeout": "30s"
+  },
+  {
+    "url": "socks5://127.0.0.1:9052",
+    "country": "tor",
+    "weight": 1,
+    "timeout": "30s"
   }
 ]

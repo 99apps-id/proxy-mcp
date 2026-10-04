@@ -203,6 +203,52 @@ The agent will call `proxy_request`, `proxy_health`, or `proxy_list` via MCP.
 - No external dependencies beyond the Go standard library.
 - SOCKS5 proxies require TCP dial support, which is available on all platforms.
 
+## Multi-Port SOCKS5 Configuration
+
+You can run multiple SOCKS5 proxies on different local ports to avoid port-level blocking. Each proxy is a separate entry in `proxies.json`:
+
+```json
+[
+  {
+    "url": "socks5://127.0.0.1:9050",
+    "country": "tor",
+    "weight": 1,
+    "timeout": "30s"
+  },
+  {
+    "url": "socks5://127.0.0.1:9051",
+    "country": "tor",
+    "weight": 1,
+    "timeout": "30s"
+  },
+  {
+    "url": "socks5://127.0.0.1:9052",
+    "country": "tor",
+    "weight": 1,
+    "timeout": "30s"
+  }
+]
+```
+
+### When multi-port helps
+
+- **Port-level blocking**: Some ISPs or networks block specific ports (e.g., 9050 for Tor). Using multiple ports (9050, 9051, 9052) bypasses this if the ISP only blocks well-known ports.
+- **Rate limiting per port**: Distributing traffic across ports can help avoid per-port rate limits.
+
+### When multi-port does NOT help
+
+- **Deep Packet Inspection (DPI)**: If the ISP inspects packet contents and detects SOCKS5 protocol handshakes, changing ports won't help. DPI sees the protocol, not just the port.
+- **IP-based blocking**: If the target API (like Meta/Muse) blocks your server's IP range (e.g., Contabo datacenter IPs), multiple local SOCKS5 ports won't help unless the SOCKS5 proxy itself egresses through a different, unblocked IP.
+- **SNI filtering**: If the ISP filters based on TLS SNI, you need a proxy that terminates TLS and forwards with a different SNI.
+
+### For Meta/Muse specifically
+
+The block is likely **IP/ASN-based** (Meta blocks datacenter IP ranges), not port-based. Multi-port SOCKS5 only helps if:
+1. The SOCKS5 proxy is a **residential/mobile proxy** with Indonesian egress IP, OR
+2. The SOCKS5 proxy routes through an ISP that Meta doesn't block
+
+If you're running local Tor instances on multiple ports, all egress still comes from the same Tor circuit IP, which is likely still a datacenter IP that Meta blocks. Use **residential HTTP proxies** or **mobile proxies** for Meta/Muse instead.
+
 ## Notes
 
 - Requests are pinned to a single proxy per call. The next call rotates based on success rate and health.
