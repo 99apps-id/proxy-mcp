@@ -72,20 +72,22 @@ $env:PROXY_MCP_CONFIG = ".\proxies.json"
 Edit your user MCP config:
 
 - **Linux/macOS**: `~/.termigo/mcp.json`
-- **Windows**: `C:\Users\Nesa\.termigo\mcp.json`
+- **Windows**: `%USERPROFILE%\.termigo\mcp.json`
 
 ```json
 {
   "mcpServers": {
     "proxy": {
-      "command": "/absolute/path/to/proxy-mcp",
-      "args": ["-config", "/absolute/path/to/proxies.json"]
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<PROXY_MCP_DIR>/proxies.json"]
     }
   }
 }
 ```
 
-Use forward slashes or escaped backslashes in JSON. Restart Termigo to load the server.
+- On Linux/macOS, replace `<PROXY_MCP_DIR>` with the absolute path to the proxy-mcp binary, e.g. `/usr/local/bin` or `$HOME/.local/bin`.
+- On Windows, replace `<PROXY_MCP_DIR>` with the absolute path to the proxy-mcp binary, e.g. `C:\\Users\\<USER>\\bin`.
+- Use forward slashes or escaped backslashes in JSON. Restart Termigo to load the server.
 
 ### VS Code (MCP Extension)
 
@@ -95,53 +97,55 @@ Add to your VS Code MCP configuration:
 {
   "mcpServers": {
     "proxy": {
-      "command": "/absolute/path/to/proxy-mcp",
-      "args": ["-config", "/absolute/path/to/proxies.json"]
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<PROXY_MCP_DIR>/proxies.json"]
     }
   }
 }
 ```
 
+Replace `<PROXY_MCP_DIR>` with the absolute path to the proxy-mcp binary on your platform.
+
 ### Claude Code
 
 ```bash
-claude mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+claude mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
 ```
 
 ### Codex
 
 ```bash
-codex mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+codex mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
 ```
 
 ### OpenCode
 
 ```bash
-opencode mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+opencode mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
 ```
 
 ### OpenClaw
 
 ```bash
-openclaw mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+openclaw mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
 ```
 
 ### Hermes
 
 ```bash
-hermes mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+hermes mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
 ```
 
 ### 9router
 
 ```bash
-9router mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+9router mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
 ```
 
 ### Termixgo
 
 ```bash
-termixgo mcp add proxy -- /absolute/path/to/proxy-mcp -config /absolute/path/to/proxies.json
+termixgo mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
 ```
 
 ### Generic MCP Configuration
@@ -152,12 +156,14 @@ Any MCP client that supports stdio servers:
 {
   "mcpServers": {
     "proxy": {
-      "command": "/absolute/path/to/proxy-mcp",
-      "args": ["-config", "/absolute/path/to/proxies.json"]
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<PROXY_MCP_DIR>/proxies.json"]
     }
   }
 }
 ```
+
+Replace `<PROXY_MCP_DIR>` with the absolute path to the proxy-mcp binary on your platform.
 
 ## Tools
 
