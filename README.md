@@ -39,169 +39,58 @@ Create a JSON file listing your proxies, for example `./proxies.json`:
 ```
 
 Fields:
-- `url`: required. `http://`, `https://`, or `socks5://`.
-- `username` / `password`: optional basic auth.
-- `country`: optional hint for the agent.
-- `weight`: higher = more traffic.
-- `timeout`: per-request timeout (`10s`, `30s`).
-- `concurrency`: optional connection limit.
+- `url`: required. `http://`, `https://`, or `socks5://`. Supports `user:pass@host:port`.
+- `country`: optional hint for proxy geolocation (e.g. `"ID"`, `"US"`, `"tor"`).
+- `weight`: optional traffic weight (higher = more requests routed here).
+- `timeout`: optional per-proxy timeout (e.g. `"10s"`, `"30s"`).
+- `concurrency`: optional max concurrent connections per proxy.
 
-## Run
+## Tools Provided
 
-```bash
-# Linux / macOS
-./proxy-mcp -config ./proxies.json
+| Tool | Description |
+|------|-------------|
+| `proxy_request` | Send HTTP(S) request through the proxy pool |
+| `proxy_health` | Health-check all proxies and return status |
+| `proxy_list` | List proxies with success rate and status |
 
-# Windows (PowerShell)
-.\proxy-mcp.exe -config .\proxies.json
+## Multi-Port SOCKS5 Configuration
 
-# or with environment variable
-# Linux / macOS
-export PROXY_MCP_CONFIG=./proxies.json
-./proxy-mcp
-
-# Windows (PowerShell)
-$env:PROXY_MCP_CONFIG = ".\proxies.json"
-.\proxy-mcp.exe
-```
-
-## Register in Editors and Agents
-
-### Termigo
-
-Edit your user MCP config:
-
-- **Linux/macOS**: `~/.termigo/mcp.json`
-- **Windows**: `%USERPROFILE%\.termigo\mcp.json`
+You can run multiple SOCKS5 proxies on different local ports to avoid port-level blocking. Each proxy is a separate entry in `proxies.json`:
 
 ```json
-{
-  "mcpServers": {
-    "proxy": {
-      "command": "<PROXY_MCP_DIR>/proxy-mcp",
-      "args": ["-config", "<PROXY_MCP_DIR>/proxies.json"]
-    }
+[
+  {
+    "url": "socks5://127.0.0.1:9050",
+    "country": "tor",
+    "weight": 1,
+    "timeout": "30s"
+  },
+  {
+    "url": "socks5://127.0.0.1:9051",
+    "country": "tor",
+    "weight": 1,
+    "timeout": "30s"
+  },
+  {
+    "url": "socks5://127.0.0.1:9052",
+    "country": "tor",
+    "weight": 1,
+    "timeout": "30s"
   }
-}
+]
 ```
 
-- On Linux/macOS, replace `<PROXY_MCP_DIR>` with the absolute path to the proxy-mcp binary, e.g. `/usr/local/bin` or `$HOME/.local/bin`.
-- On Windows, replace `<PROXY_MCP_DIR>` with the absolute path to the proxy-mcp binary, e.g. `C:\\Users\\<USER>\\bin`.
-- Use forward slashes or escaped backslashes in JSON. Restart Termigo to load the server.
+### When multi-port helps
 
-### VS Code (MCP Extension)
+- **Port-level blocking**: Some ISPs or networks block specific ports (e.g. 9050 for Tor) but not others.
+- **Rate limiting per port**: Distributing traffic across multiple ports avoids per-port rate limits.
 
-Add to your VS Code MCP configuration:
+### When multi-port does NOT help
 
-```json
-{
-  "mcpServers": {
-    "proxy": {
-      "command": "<PROXY_MCP_DIR>/proxy-mcp",
-      "args": ["-config", "<PROXY_MCP_DIR>/proxies.json"]
-    }
-  }
-}
-```
+- **DPI / SNI filtering**: Deep packet inspection can still identify and block the traffic regardless of port.
+- **IP-level blocking**: If the proxy server's IP is blocked, changing ports won't help.
 
-Replace `<PROXY_MCP_DIR>` with the absolute path to the proxy-mcp binary on your platform.
-
-### Claude Code
-
-```bash
-claude mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
-```
-
-### Codex
-
-```bash
-codex mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
-```
-
-### OpenCode
-
-```bash
-opencode mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
-```
-
-### OpenClaw
-
-```bash
-openclaw mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
-```
-
-### Hermes
-
-```bash
-hermes mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
-```
-
-### 9router
-
-```bash
-9router mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
-```
-
-### Termixgo
-
-```bash
-termixgo mcp add proxy -- <PROXY_MCP_DIR>/proxy-mcp -config <PROXY_MCP_DIR>/proxies.json
-```
-
-### Generic MCP Configuration
-
-Any MCP client that supports stdio servers:
-
-```json
-{
-  "mcpServers": {
-    "proxy": {
-      "command": "<PROXY_MCP_DIR>/proxy-mcp",
-      "args": ["-config", "<PROXY_MCP_DIR>/proxies.json"]
-    }
-  }
-}
-```
-
-Replace `<PROXY_MCP_DIR>` with the absolute path to the proxy-mcp binary on your platform.
-
-## Tools
-
-### `proxy_request`
-Make an HTTP(S) request through the healthiest available proxy.
-
-```json
-{
-  "url": "https://api.meta.com/v1/models",
-  "method": "GET",
-  "headers": {"Authorization": "Bearer <token>"}
-}
-```
-
-Returns status, proxy used, headers, and body preview.
-
-### `proxy_health`
-Run a quick connectivity check against every proxy and report status.
-
-### `proxy_list`
-Same as `proxy_health`; lists all proxies with current health status and success rate.
-
-## Usage from AI Agent
-
-Once registered, you can ask the agent to use the proxy pool directly:
-
-- "Fetch https://api.meta.com/v1/models through the proxy pool"
-- "Check proxy health"
-- "List proxies"
-
-The agent will call `proxy_request`, `proxy_health`, or `proxy_list` via MCP.
-
-## Cross-Platform Notes
-
-- Binary name is `proxy-mcp` on Linux/macOS, `proxy-mcp.exe` on Windows.
-- Config paths use platform-native separators, but forward slashes work everywhere.
-- No external dependencies beyond the Go standard library.
-- SOCKS5 proxies require TCP dial support, which is available on all platforms.
+For IP-level blocking, use exit-node proxies from different networks or countries.
 
 ## Setting Up a Proxy Server
 
@@ -235,14 +124,15 @@ sudo htpasswd -c /etc/squid/passwd youruser
 # Enter password twice when prompted
 ```
 
-**Configure Squid** (edit `/etc/squid/squid.conf` or `/usr/local/etc/squid/squid.conf` on macOS):
+**Configure Squid** (edit `/etc/squid/squid.conf` or `/usr/local/etc/squid/squid.conf`):
 
 ```
 auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
-auth_param basic realm Proxy Authentication
+auth_param basic realm proxy
 acl authenticated proxy_auth REQUIRED
 http_access allow authenticated
-http_port 8080
+http_access deny all
+http_port 3128
 ```
 
 **Start Squid:**
@@ -251,34 +141,18 @@ http_port 8080
 # Linux (systemd)
 sudo systemctl enable --now squid
 
-# macOS (launchd)
+# macOS
 sudo brew services start squid
 ```
 
-**Firewall:**
-
-```bash
-# Linux (ufw)
-sudo ufw allow 8080/tcp
-
-# Linux (iptables)
-sudo iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
-
-# macOS
-echo "allow 8080" | sudo pfctl -f -
-```
-
 **Proxy URL format:**
-
 ```
-http://youruser:yourpassword@your-vps-hostname:8080
+http://youruser:yourpassword@your-vps-hostname:3128
 ```
-
----
 
 ### Option B: 3proxy (HTTP + SOCKS5, lightweight)
 
-3proxy is lightweight and supports both HTTP and SOCKS5 on the same port or different ports.
+3proxy is a tiny proxy server suitable for low-resource VPS.
 
 **Install (Linux):**
 
@@ -286,47 +160,33 @@ http://youruser:yourpassword@your-vps-hostname:8080
 # Debian / Ubuntu
 sudo apt install 3proxy -y
 
-# Or compile from source
+# Or build from source
 git clone https://github.com/z3APA3A/3proxy.git
 cd 3proxy
 make -f Makefile.Linux
 sudo cp 3proxy /usr/local/bin/
 ```
 
-**Configure** (`/etc/3proxy/3proxy.cfg` or `~/3proxy.cfg`):
+**Configure** (`/etc/3proxy/3proxy.cfg`):
 
 ```
-# Define users: username:CL:password
+auth strong
 users youruser:CL:yourpassword
-
-# HTTP proxy on 8080
-proxy -p8080 -i0.0.0.0 -e0.0.0.0
-
-# SOCKS5 proxy on 9050
-socks -p9050 -i0.0.0.0 -e0.0.0.0
-
-# Optional: require auth for SOCKS5
-socks -p9050 -i0.0.0.0 -e0.0.0.0 -u youruser:CL:yourpassword
+proxy -p3128 -n
+socks -p9050 -n
 ```
 
-**Start 3proxy:**
+**Start:**
 
 ```bash
-# Linux (systemd)
-sudo systemctl enable --now 3proxy
-
-# Or run directly
 sudo 3proxy /etc/3proxy/3proxy.cfg
 ```
 
-**Proxy URL formats:**
-
+**Proxy URLs:**
 ```
-http://youruser:yourpassword@your-vps-hostname:8080
+http://youruser:yourpassword@your-vps-hostname:3128
 socks5://youruser:yourpassword@your-vps-hostname:9050
 ```
-
----
 
 ### Option C: Dante (SOCKS5 only)
 
@@ -335,155 +195,51 @@ Dante is a mature SOCKS5 server.
 **Install (Linux):**
 
 ```bash
+# Debian / Ubuntu
 sudo apt install dante-server -y
 ```
 
 **Configure** (`/etc/danted.conf`):
 
 ```
-# Listen on all interfaces
-internal: 0.0.0.0 port = 9050
-external: 0.0.0.0
-
-# Authentication
-method: username
+logoutput: stderr
+internal: 0.0.0.0 port = 1080
+external: eth0
+clientmethod: none
+socksmethod: username
 user.privileged: root
-user.notprivileged: nobody
+user.unprivileged: nobody
 
-# ACLs
 client pass {
     from: 0.0.0.0/0 to: 0.0.0.0/0
     log: error
 }
 
-# Allow authenticated users
-client pass {
-    from: 0.0.0.0/0 to: 0.0.0./0
-    method: username
-}
-
-# Pass all traffic
-pass {
+socks pass {
     from: 0.0.0.0/0 to: 0.0.0.0/0
-    method: username
+    command: connect
+    log: error
+    socksmethod: username
 }
-
-# Logging
-logoutput: stderr
 ```
 
-**Start Dante:**
+**Add user** (edit `/etc/pam.d/sockd` or use system auth):
+
+```bash
+sudo useradd -r -s /usr/sbin/nologin proxyuser
+echo "proxyuser:yourpassword" | sudo chpasswd
+```
+
+**Start:**
 
 ```bash
 sudo systemctl enable --now danted
 ```
 
 **Proxy URL format:**
-
 ```
-socks5://youruser:yourpassword@your-vps-hostname:9050
+socks5://proxyuser:yourpassword@your-vps-hostname:1080
 ```
-
----
-
-### Getting the Proxy URL
-
-After setting up your proxy server, construct the URL:
-
-```
-protocol://username:password@host:port
-```
-
-| Component | Example | Description |
-|-----------|---------|-------------|
-| `protocol` | `http` or `socks5` | Depends on your proxy software |
-| `username` | `youruser` | The username you configured |
-| `password` | `yourpassword` | The password you configured |
-| `host` | `your-vps-hostname` | IP address or domain name of your VPS |
-| `port` | `8080` or `9050` | Port your proxy listens on |
-
-**Examples:**
-
-```json
-[
-  {
-    "url": "http://youruser:yourpassword@your-vps-hostname:8080",
-    "country": "ID",
-    "weight": 10,
-    "timeout": "15s"
-  },
-  {
-    "url": "socks5://youruser:yourpassword@your-vps-hostname:9050",
-    "country": "ID",
-    "weight": 5,
-    "timeout": "30s"
-  }
-]
-```
-
----
-
-### Testing Your Proxy
-
-Test from your local machine before adding to `proxies.json`:
-
-```bash
-# Linux / macOS
-curl -x http://youruser:yourpassword@your-vps-hostname:8080 https://api.meta.com/v1/models
-
-# Windows PowerShell
-curl -x http://youruser:yourpassword@your-vps-hostname:8080 https://api.meta.com/v1/models
-```
-
-If you get a response from Meta, the proxy is working.
-
----
-
-## Multi-Port SOCKS5 Configuration
-
-You can run multiple SOCKS5 proxies on different local ports to avoid port-level blocking. Each proxy is a separate entry in `proxies.json`:
-
-```json
-[
-  {
-    "url": "socks5://127.0.0.1:9050",
-    "country": "tor",
-    "weight": 1,
-    "timeout": "30s"
-  },
-  {
-    "url": "socks5://127.0.0.1:9051",
-    "country": "tor",
-    "weight": 1,
-    "timeout": "30s"
-  },
-  {
-    "url": "socks5://127.0.0.1:9052",
-    "country": "tor",
-    "weight": 1,
-    "timeout": "30s"
-  }
-]
-```
-
-### When multi-port helps
-
-- **Port-level blocking**: Some ISPs or networks block specific ports (e.g., 9050 for Tor). Using multiple ports (9050, 9051, 9052) bypasses this if the ISP only blocks well-known ports.
-- **Rate limiting per port**: Distributing traffic across ports can help avoid per-port rate limits.
-
-### When multi-port does NOT help
-
-- **Deep Packet Inspection (DPI)**: If the ISP inspects packet contents and detects SOCKS5 protocol handshakes, changing ports won't help. DPI sees the protocol, not just the port.
-- **IP-based blocking**: If the target API (like Meta/Muse) blocks your server's IP range (e.g., Contabo datacenter IPs), multiple local SOCKS5 ports won't help unless the SOCKS5 proxy itself egresses through a different, unblocked IP.
-- **SNI filtering**: If the ISP filters based on TLS SNI, you need a proxy that terminates TLS and forwards with a different SNI.
-
-### For Meta/Muse specifically
-
-The block is likely **IP/ASN-based** (Meta blocks datacenter IP ranges), not port-based. Multi-port SOCKS5 only helps if:
-1. The SOCKS5 proxy is a **residential/mobile proxy** with Indonesian egress IP, OR
-2. The SOCKS5 proxy routes through an ISP that Meta doesn't block
-
-If you're running local Tor instances on multiple ports, all egress still comes from the same Tor circuit IP, which is likely still a datacenter IP that Meta blocks. Use **residential HTTP proxies** or **mobile proxies** for Meta/Muse instead.
 
 ## Running as a Service on Linux
 
@@ -523,23 +279,39 @@ Environment=HOME=/root
 WantedBy=multi-user.target
 ```
 
-**Start service:**
+**Enable and start:**
 
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now proxy-mcp
-sudo systemctl status proxy-mcp
 ```
 
-**View logs:**
+**Check status:**
 
 ```bash
+sudo systemctl status proxy-mcp
 journalctl -u proxy-mcp -f
 ```
 
-**macOS (launchd):**
+## Running as a Service on macOS
 
-Create `~/Library/LaunchAgents/com.99apps.proxymcp.plist`:
+**Install binary:**
+
+```bash
+# Build or copy binary
+mkdir -p ~/.local/bin
+cp proxy-mcp ~/.local/bin/
+chmod +x ~/.local/bin/proxy-mcp
+```
+
+**Create config directory:**
+
+```bash
+mkdir -p ~/.config/proxy-mcp
+cp proxies.json ~/.config/proxy-mcp/proxies.json
+```
+
+**Create launchd plist** (`~/Library/LaunchAgents/com.99apps.proxy-mcp.plist`):
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -547,26 +319,287 @@ Create `~/Library/LaunchAgents/com.99apps.proxymcp.plist`:
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.99apps.proxymcp</string>
+    <string>com.99apps.proxy-mcp</string>
     <key>ProgramArguments</key>
     <array>
         <string>/usr/local/bin/proxy-mcp</string>
         <string>-config</string>
-        <string>/Users/youruser/.config/proxy-mcp/proxies.json</string>
+        <string>/Users/your-user/.config/proxy-mcp/proxies.json</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/proxy-mcp.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/proxy-mcp.err</string>
 </dict>
 </plist>
 ```
 
-Load it:
+**Load and start:**
 
 ```bash
-launchctl load ~/Library/LaunchAgents/com.99apps.proxymcp.plist
+launchctl load ~/Library/LaunchAgents/com.99apps.proxy-mcp.plist
+launchctl start com.99apps.proxy-mcp
 ```
+
+## Notes
+
+- Requests are pinned to a single proxy per call. The next call rotates based on success rate and health.
+- Failed proxies are not removed, but they are de-prioritized automatically.
+- All core Termigo SSRF protections still apply. This MCP only chooses the egress path; it does not bypass private-IP or metadata-IP filters.
+- For Meta/Muse specifically, choose proxies with Indonesian egress IPs if Meta blocks datacenter ranges.
+
+## Editor and Agent Compatibility
+
+This MCP server is designed to work with any MCP client, including:
+
+- **Termigo**
+- **Termixgo**
+- **VS Code** (with MCP extension)
+- **Claude Code** (Anthropic's CLI)
+- **Codex** (OpenAI's coding agent)
+- **OpenCode**
+- **OpenClaw**
+- **Hermes**
+- **9router**
+- Any other editor or agent that supports the Model Context Protocol (MCP) over stdio
+
+### Termigo
+
+Add to `~/.termigo/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "proxy": {
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<CONFIG_DIR>/proxies.json"]
+    }
+  }
+}
+```
+
+Replace `<PROXY_MCP_DIR>` with the directory containing the `proxy-mcp` binary and `<CONFIG_DIR>` with the path to your `proxies.json`.
+
+### Termixgo
+
+Add to `~/.termixgo/config.json`:
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "proxy",
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<CONFIG_DIR>/proxies.json"]
+    }
+  ]
+}
+```
+
+Run `/mcp reload` in a session to start the server. Tools appear as `mcp_proxy__proxy_request`, `mcp_proxy__proxy_health`, `mcp_proxy__proxy_list`.
+
+### VS Code
+
+Add to `.vscode/mcp.json` in your workspace (requires MCP extension):
+
+```json
+{
+  "servers": {
+    "proxy": {
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<CONFIG_DIR>/proxies.json"]
+    }
+  }
+}
+```
+
+Or add to user settings (`settings.json`):
+
+```json
+{
+  "mcp.servers": {
+    "proxy": {
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<CONFIG_DIR>/proxies.json"]
+    }
+  }
+}
+```
+
+### Claude Code
+
+Claude Code reads `mcpServers` from `~/.claude.json` (NOT `settings.json`).
+
+**Manual edit:**
+
+```json
+{
+  "mcpServers": {
+    "proxy": {
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<CONFIG_DIR>/proxies.json"]
+    }
+  }
+}
+```
+
+**Via 9router Dashboard:**
+
+1. Open 9router Dashboard
+2. Go to Claude Code CLI Tools
+3. Use the "Add Custom MCP" feature
+
+### Codex CLI
+
+Codex CLI can use MCP servers via environment variables or config file.
+
+**Environment variable:**
+
+```bash
+export OPENAI_MCP_SERVERS='{"proxy":{"command":"<PROXY_MCP_DIR>/proxy-mcp","args":["-config","<CONFIG_DIR>/proxies.json"]}}'
+```
+
+**Or add to Codex config file** (location varies by version, check Codex docs).
+
+### Cursor
+
+**Via Settings UI:**
+
+1. Open Cursor Settings
+2. Go to Features > MCP
+3. Click "Add MCP Server"
+4. Fill in:
+   - Name: `proxy`
+   - Command: `<PROXY_MCP_DIR>/proxy-mcp`
+   - Args: `-config <CONFIG_DIR>/proxies.json`
+
+**Or edit `~/.cursor/settings.json`:**
+
+```json
+{
+  "mcpServers": {
+    "proxy": {
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<CONFIG_DIR>/proxies.json"]
+    }
+  }
+}
+```
+
+### OpenCode
+
+Add to `.opencode/mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "proxy": {
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<CONFIG_DIR>/proxies.json"]
+    }
+  }
+}
+```
+
+### OpenClaw
+
+Add to `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "mcpServers": {
+    "proxy": {
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<CONFIG_DIR>/proxies.json"]
+    }
+  }
+}
+```
+
+### Hermes
+
+Add to Hermes config file (check Hermes docs for exact path, typically `~/.hermes/config.json` or project `.hermes/config.json`):
+
+```json
+{
+  "mcpServers": {
+    "proxy": {
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<CONFIG_DIR>/proxies.json"]
+    }
+  }
+}
+```
+
+### 9router
+
+9router has a built-in MCP marketplace and supports custom MCP servers.
+
+**Via Dashboard UI:**
+
+1. Open 9router Dashboard (default: `http://localhost:20128`)
+2. Go to MCP section
+3. Click "Browse MCP Marketplace" or "Add Custom MCP"
+4. Add a new stdio MCP server:
+   - Name: `proxy`
+   - Command: `<PROXY_MCP_DIR>/proxy-mcp`
+   - Args: `-config <CONFIG_DIR>/proxies.json`
+
+**Or edit config directly:**
+
+9router supports both managed HTTP MCP servers and local stdio MCP servers. For `proxy-mcp`, use the local stdio format:
+
+```json
+{
+  "managedMcpServers": [],
+  "localStdioPlugins": [
+    {
+      "name": "proxy",
+      "command": "<PROXY_MCP_DIR>/proxy-mcp",
+      "args": ["-config", "<CONFIG_DIR>/proxies.json"],
+      "toolNames": ["proxy_request", "proxy_health", "proxy_list"]
+    }
+  ]
+}
+```
+
+After adding, restart 9router or reload the MCP servers.
+
+## Path Placeholders
+
+Replace these placeholders in the examples above:
+
+| Placeholder | Linux | macOS | Windows |
+|-------------|-------|-------|---------|
+| `<PROXY_MCP_DIR>` | `/usr/local/bin` or `$HOME/.local/bin` | `/usr/local/bin` or `$HOME/.local/bin` | `C:\Users\<USER>\bin` or `C:\Program Files\proxy-mcp` |
+| `<CONFIG_DIR>` | `/etc/proxy-mcp` or `$HOME/.config/proxy-mcp` | `$HOME/.config/proxy-mcp` | `C:\Users\<USER>\.config\proxy-mcp` |
+| `<USER>` | your Linux username | your macOS username | your Windows username |
+
+## Verification
+
+After adding the MCP server, verify it works:
+
+```bash
+# List tools provided by the proxy MCP server
+termixgo mcp
+# or
+~/.termigo/mcp.json
+# or use the /mcp command in your editor
+```
+
+You should see `proxy_request`, `proxy_health`, and `proxy_list` in the tool list.
+
+## Troubleshooting
+
+- **"command not found"**: Ensure `proxy-mcp` is in your PATH or use the full absolute path.
+- **"permission denied"**: Make the binary executable: `chmod +x proxy-mcp` (Linux/macOS).
+- **"config file not found"**: Use absolute paths in the `-config` argument.
+- **Proxy connection failed**: Check that the proxy server is reachable and credentials are correct. Test with `curl -x http://user:pass@host:port https://api.meta.com/v1/...`.
+- **Firewall blocking**: Ensure outbound connections to the proxy port are allowed.
 
 ## Notes
 
