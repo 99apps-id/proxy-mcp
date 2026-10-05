@@ -3,6 +3,8 @@
 MCP server that rotates outbound HTTP(S) requests through a pool of proxies.
 Use it when an API (for example Meta/Muse) blocks your server IP or ISP DNS.
 
+**License:** Apache-2.0
+
 ## Install
 
 ### Build from source
